@@ -64,14 +64,30 @@ class Blockchain {
     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            block.time = new Date().getTime().toString().slice(0,-3);
-            block.height = self.height + 1;
-            if(self.height == -1) { block.previousBlockHash = null;} 
-            else { block.previousBlockHash = this.hash;}
-             block.hash = SHA256(JSON.stringify(block)).toString();
-             self.chain.push(block);
-             this.height += 1;
-             resolve(block);
+            try {
+                block.time = new Date().getTime().toString().slice(0,-3);
+                block.height = self.height + 1;
+                if(self.height == -1) { block.previousBlockHash = null;} 
+                else { block.previousBlockHash = this.hash;}
+                block.hash = SHA256(JSON.stringify(block)).toString();
+                self.chain.push(block);
+                this.height += 1;
+
+                let Errors = await self.validateChain();
+                if (Errors.length > 0) {
+                    self.chain.pop();
+                    self.height--;
+                    throw new Error('Compromised Block');
+                }
+                resolve(block);
+
+
+            }
+            catch(e) {
+                console.log(e);
+                reject(e);
+            }
+            
         });
     }
 
